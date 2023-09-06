@@ -13,6 +13,19 @@ from torch import nn
 
 
 def grid_stucture_encoder(input_channel, block_config, net_config, timing):
+    """
+    Create a grid structure encoder network.
+
+    Args:
+        input_channel (int): Number of input channels.
+        block_config (List[Tuple[int, int]]): List of tuples specifying the number of output channels
+            and the number of residual blocks for each layer.
+        net_config: Configuration for the network.
+        timing: Timing information.
+
+    Returns:
+        nn.Sequential: A grid structure encoder network.
+    """
     layers = []
     for i, (out_channels, res_blocks) in enumerate(block_config):
         layers.extend([
@@ -27,6 +40,21 @@ def grid_stucture_encoder(input_channel, block_config, net_config, timing):
 
 
 class ResnetEncoderWithTarget(EncoderBase):
+    """
+    ResNet-based encoder network with target input.
+
+    Args:
+        cfg: Configuration for the network.
+        obs_space: Observation space.
+        timing: Timing information.
+
+    Attributes:
+        conv_grid (nn.Sequential): Convolutional layers for grid input.
+        conv_target (nn.Sequential): Convolutional layers for target input.
+        inventory_compass_emb (nn.Sequential): Embedding layers for inventory and compass data.
+        conv_target_out_size (int): Output size of target convolutional layers.
+        conv_grid_out_size (int): Output size of grid convolutional layers.
+    """
     def __init__(self, cfg, obs_space, timing):
         super().__init__(cfg, timing)
         target_shape = get_obs_shape(obs_space['target_grid'])
@@ -152,6 +180,18 @@ from torch import nn
 from sentence_transformers import SentenceTransformer
 
 class image_encoder(nn.Module):
+    """
+    Image encoder module.
+
+    Args:
+        obs_space: Observation space.
+        cfg: Configuration for the network.
+        timing: Timing information.
+
+    Attributes:
+        conv_grid (nn.Sequential): Convolutional layers for grid input.
+        conv_grid_out_size (int): Output size of grid convolutional layers.
+    """
     def __init__(self, obs_space,cfg,timing):
         super(image_encoder,self).__init__()
         self.timing = timing
@@ -206,6 +246,26 @@ k.shape
 k.transpose(1,0).shape
 
 class language_encoder(nn.Module):
+    """
+    Language encoder module that uses Sentence Transformers for encoding text.
+
+    Args:
+        None
+
+    Attributes:
+        model: Sentence Transformers model for text encoding.
+
+    Methods:
+        forward(obs_dict):
+            Forward pass to encode text observations.
+
+    Returns:
+        torch.Tensor: Embeddings of the input text.
+
+    Example:
+        lang = LanguageEncoder()
+        embeddings = lang({'string': 'This is an example sentence.'})
+    """
   def __init__(self):
       super().__init__()
 
@@ -223,6 +283,26 @@ p = lang({'string': 'hey fuck u mother fucker bitch fk'})
 p.shape
 
 class other_stuff_encoder(nn.Module):
+    """
+    Encoder module for processing miscellaneous non-image and non-textual observations.
+
+    Args:
+        None
+
+    Attributes:
+        inventory_compass_emb (nn.Sequential): Sequential layers for encoding inventory and compass data.
+
+    Methods:
+        forward(obs_dict):
+            Forward pass to encode miscellaneous observations.
+
+    Returns:
+        torch.Tensor: Embeddings of the miscellaneous observations.
+
+    Example:
+        other_enc = OtherStuffEncoder()
+        embeddings = other_enc({'inventory': torch.randn(11), 'agentPos': torch.randn(5)})
+    """
     def __init__(self):
         super(other_stuff_encoder,self).__init__()
         self.inventory_compass_emb = nn.Sequential(
@@ -320,6 +400,32 @@ from htm_pytorch import HTMBlock
 memories = torch.randn(1, 200, 256)
 
 class whole_net(nn.Module):
+    """
+    Whole network architecture for processing multi-modal inputs.
+
+    Args:
+        None
+
+    Attributes:
+        image_encoder (image_encoder): Instance of the image encoder.
+        language_encoder (language_encoder): Instance of the language encoder.
+        lang_q (nn.Linear): Linear layer for language query projection.
+        hcam (HTMBlock): Hierarchical Contextual Attention Memory (HCAM) block.
+        cross_attention1 (attention_Layer): Cross-attention layer 1.
+        cross_attention2 (attention_Layer): Cross-attention layer 2.
+        _output (torch.Tensor): Intermediate output tensor.
+
+    Methods:
+        forward(inputs, memories):
+            Forward pass to process multi-modal inputs and produce an output tensor.
+
+    Returns:
+        torch.Tensor: The output tensor of the network.
+
+    Example:
+        net = WholeNet()
+        output = net({'string': 'sample text'}, torch.randn(1, 200, 256))
+    """
   def __init__(self):
     super(whole_net,self).__init__()
     self.image_encoder = image_encoder(obs,cfg,Timing())
